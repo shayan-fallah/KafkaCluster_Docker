@@ -1,0 +1,113 @@
+version: '2'
+services:
+ zookeeper-one:
+  image: confluentinc/cp-zookeeper:latest
+  container_name: zookeeper-one
+  environment:
+     ZOOKEEPER_SERVER_ID: 1
+     ZOOKEEPER_CLIENT_PORT: 2181
+     ZOOKEEPER_TICK_TIME: 2000
+     ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
+  ports:
+    - 2181:2181
+ zookeeper-two: 
+  image: confluentinc/cp-zookeeper:latest
+  container_name: zookeeper-two
+  environment: 
+     ZOOKEEPER_SERVER_ID: 2
+     ZOOKEEPER_CLIENT_PORT: 2182
+     ZOOKEEPER_TICK_TIME: 2000
+     ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
+  ports:
+    - 2182:2182
+ zookeeper-three:
+  image: confluentinc/cp-zookeeper:latest
+  container_name: zookeeper-three
+  environment:
+     ZOOKEEPER_SERVER_ID: 3
+     ZOOKEEPER_CLIENT_PORT: 2183
+     ZOOKEEPER_TICK_TIME: 2000
+     ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
+  ports:
+    - 2183:2183
+ kafka-one:
+  image: confluentinc/cp-kafka:latest
+  container_name: kafka-one
+  depends_on:
+     - zookeeper-one
+     - zookeeper-two
+     - zookeeper-three
+  ports:
+     - 29092:29092
+  environment:
+     KAFKA_BROKER_ID: 1
+     KAFKA_ZOOKEEPER_CONNECT: zookeeper-one:2181,zookeeper-two:2182,zookeeper-three:2183
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-one:9092 ,PLAINTEXT_HOST://localhost:29092
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+ kafka-two:
+  image: confluentinc/cp-kafka:latest
+  container_name: kafka-two
+  depends_on:
+     - zookeeper-one
+     - zookeeper-two
+     - zookeeper-three
+  ports:
+     - 39092:39092
+  environment:
+     KAFKA_BROKER_ID: 2
+     KAFKA_ZOOKEEPER_CONNECT: zookeeper-one:2181,zookeeper-two:2182,zookeeper-three:2183
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-two:9093,PLAINTEXT_HOST://localhost:39092
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+ kafka-three:
+  image: confluentinc/cp-kafka:latest
+  container_name: kafka-three
+  depends_on:
+     - zookeeper-one
+     - zookeeper-two
+     - zookeper-three
+  ports:
+     - 49092:49092
+  environment:
+     KAFKA_BROKER_ID: 3
+     KAFKA_ZOOKEEPER_CONNECT: zookeeper-one:2181,zookeeper-two:2182,zookeeper-three:2183
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-three:9094,PLAINTEXT_HOST://localhost:49092
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+ producer:
+  image: python:3
+  depends_on:
+     - zookeeper-one
+     - zookeeper-two
+     - zookeeper-three
+     - kafka-one
+     - kafka-two
+     - kafka-three
+  build: 
+     context: ./producer 
+  ports: 
+     - 59092:59092
+  working_dir: /usr/src/app
+  stdin_open: true
+  tty: true
+ consumer:
+  image: python:3
+  depends_on:
+     - zookeeper-one
+     - zookeeper-two
+     - zookeeper-three
+     - kafka-one
+     - kafka-two
+     - kafka-three
+     - producer
+  build: 
+     context: ./consumer 
+  ports: 
+     - 59093:59093
+  working_dir: /usr/src/app
+  stdin_open: true
+  tty: true
