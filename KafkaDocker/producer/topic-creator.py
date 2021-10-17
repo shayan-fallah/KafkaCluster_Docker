@@ -6,5 +6,5 @@ admin_client = KafkaAdminClient(
 )
 
 topic_list = []
-topic_list.append(NewTopic(name="topictest", num_partitions=1, replication_factor=1))
+topic_list.append(NewTopic(name="topictest", num_partitions=1, replication_factor=2))
 admin_client.create_topics(new_topics=topic_list, validate_only=False)
